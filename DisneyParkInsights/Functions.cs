@@ -24,6 +24,17 @@ namespace DisneyWorldWaitTracker
             _themeParksWiki = themeParksWiki;
         }
 
+        [FunctionName("TriggerAttractionDataRetrieval")]
+        public async Task TriggerAttractionDataRetrieval([TimerTrigger("%AttractionRetrievalInterval%")]TimerInfo myTimer, ILogger log)
+        {
+            //Get park data
+            await _themeParksWiki.GetPark("WaltDisneyWorldMagicKingdom");
+
+            //Get park attraction data if park is open
+
+        }
+
+
         [FunctionName("MagicKingdomWaitTimes")]
         public async Task GetMagicKingdomWaitTimes([TimerTrigger(MagicKingdomRunFrequency)]TimerInfo myTimer, [Table("MagicKingdomWaitTimes")]CloudTable cloudTable, ILogger log)
         {
@@ -72,9 +83,9 @@ namespace DisneyWorldWaitTracker
             log.LogInformation($"Animal Kingdom wait times finished at: {DateTime.Now}");
         }
 
-        private static async Task AddWaitTimesToTable(CloudTable cloudTable, IEnumerable<AttractionWaitTime> attractionWaitTimes)
+        private static async Task AddWaitTimesToTable(CloudTable cloudTable, IEnumerable<AttractionInfo> attractionWaitTimes)
         {
-            foreach (AttractionWaitTime attractionWaitTime in attractionWaitTimes)
+            foreach (AttractionInfo attractionWaitTime in attractionWaitTimes)
             {
                 if (attractionWaitTime.WaitTime.HasValue
                     && (attractionWaitTime.Status == AttractionStatus.Operating

@@ -9,27 +9,27 @@ namespace DisneyWorldWaitTracker
     public interface IThemeParksWiki
     {
         [Get("/preview/parks/WaltDisneyWorldHollywoodStudios/waittime")]
-        Task<IEnumerable<AttractionWaitTime>> GetWaltDisneyWorldHollywoodStudiosWaitTimes();
+        Task<IEnumerable<AttractionInfo>> GetWaltDisneyWorldHollywoodStudiosWaitTimes();
 
         [Get("/preview/parks/WaltDisneyWorldAnimalKingdom/waittime")]
-        Task<IEnumerable<AttractionWaitTime>> GetWaltDisneyWorldAnimalKingdomWaitTimes();
+        Task<IEnumerable<AttractionInfo>> GetWaltDisneyWorldAnimalKingdomWaitTimes();
 
         [Get("/preview/parks/WaltDisneyWorldEpcot/waittime")]
-        Task<IEnumerable<AttractionWaitTime>> GetWaltDisneyWorldEpcotWaitTimes();
+        Task<IEnumerable<AttractionInfo>> GetWaltDisneyWorldEpcotWaitTimes();
 
         [Get("/preview/parks/WaltDisneyWorldMagicKingdom/waittime")]
-        Task<IEnumerable<AttractionWaitTime>> GetWaltDisneyWorldMagicKingdomWaitTimes();
+        Task<IEnumerable<AttractionInfo>> GetWaltDisneyWorldMagicKingdomWaitTimes();
 
         [Get("/preview/parks")]
-        Task<string> GetParks();
+        Task<IEnumerable<string>> GetParks();
         
         [Get("/preview/parks/{parkID}")]
-        Task<string> GetPark(string parkID);
+        Task<ParkData> GetPark(string parkID);
 
         [Get("/preview/parks/{parkID}/calendar")]
-        Task<string> GetParkCalendar(string parkID);
+        Task<IEnumerable<AttractionCalendarEntry>> GetParkCalendar(string parkID);
 
         [Get("/preview/parks/{parkID}/waittime")]
-        Task<IEnumerable<AttractionWaitTime>> GetParkWaitTimes(string parkID);
+        Task<IEnumerable<AttractionInfo>> GetParkWaitTimes(string parkID);
     }
 }
