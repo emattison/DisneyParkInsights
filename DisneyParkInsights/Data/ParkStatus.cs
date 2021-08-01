@@ -1,4 +1,4 @@
-﻿namespace DisneyWorldWaitTracker
+﻿namespace DisneyWorldWaitTracker.Data
 {
     public enum ParkStatus
     {

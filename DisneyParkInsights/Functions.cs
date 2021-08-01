@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Net.Http;
+using System.Linq;
 using System.Threading.Tasks;
+using DisneyParkInsights;
+using DisneyWorldWaitTracker.Data;
 using Microsoft.Azure.Cosmos.Table;
-using Microsoft.Azure.Storage;
-using Microsoft.Azure.Storage.Blob;
 using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Logging;
 
 namespace DisneyWorldWaitTracker
@@ -14,27 +13,49 @@ namespace DisneyWorldWaitTracker
     public class Functions
     {
         private readonly IThemeParksWiki _themeParksWiki;
+        private readonly IAttractionInfoStorageService _attractionInfoStorage;
         private const string MagicKingdomRunFrequency = "0 */15 13-22 * * *";
         private const string HollywoodStudiosRunFrequency = "0 */15 14-23 * * *";
         private const string EpcotRunFrequency = "0 */15 15-23 * * *";
         private const string AnimalKingdomRunFrequency = "0 */15 13-21 * * *";
 
-        public Functions(IThemeParksWiki themeParksWiki)
+        private string[] Parks = new string[]
+        {
+            "WaltDisneyWorldMagicKingdom",
+            "WaltDisneyWorldHollywoodStudios",
+            "WaltDisneyWorldAnimalKingdom",
+            "WaltDisneyWorldEpcot",
+            "DisneylandResortMagicKingdom",
+            "DisneylandResortCaliforniaAdventure"
+        };
+
+        public Functions(IThemeParksWiki themeParksWiki, IAttractionInfoStorageService attractionInfoStorage)
         {
             _themeParksWiki = themeParksWiki;
+            _attractionInfoStorage = attractionInfoStorage;
         }
 
         [FunctionName("TriggerAttractionDataRetrieval")]
         public async Task TriggerAttractionDataRetrieval([TimerTrigger("%AttractionRetrievalInterval%")]TimerInfo myTimer, ILogger log)
         {
             //Get park data
-            await _themeParksWiki.GetPark("WaltDisneyWorldMagicKingdom");
+            foreach (string park in Parks)
+            {
+                IEnumerable<ParkCalendarEntryData> parkCalendarEntries = await _themeParksWiki.GetParkCalendar(park);
 
-            //Get park attraction data if park is open
+                var parkCalendar = parkCalendarEntries.FirstOrDefault(x => x.Date.Date == DateTime.Today);
 
+                if (parkCalendar.OpeningTime.UtcDateTime <= DateTime.UtcNow && parkCalendar.ClosingTime.UtcDateTime >= DateTime.UtcNow)
+                {
+                    IEnumerable<AttractionData> attractionInfos = await _themeParksWiki.GetParkWaitTimes(park);
+
+                    await AddWaitTimesToStorage(park, attractionInfos);
+                }
+            }
         }
 
 
+        /* Old Functions
         [FunctionName("MagicKingdomWaitTimes")]
         public async Task GetMagicKingdomWaitTimes([TimerTrigger(MagicKingdomRunFrequency)]TimerInfo myTimer, [Table("MagicKingdomWaitTimes")]CloudTable cloudTable, ILogger log)
         {
@@ -82,37 +103,20 @@ namespace DisneyWorldWaitTracker
 
             log.LogInformation($"Animal Kingdom wait times finished at: {DateTime.Now}");
         }
+        */
 
-        private static async Task AddWaitTimesToTable(CloudTable cloudTable, IEnumerable<AttractionInfo> attractionWaitTimes)
+        private async Task AddWaitTimesToStorage(string park, IEnumerable<AttractionData> attractionWaitTimes)
         {
-            foreach (AttractionInfo attractionWaitTime in attractionWaitTimes)
+            foreach (AttractionData attractionWaitTime in attractionWaitTimes)
             {
-                if (attractionWaitTime.WaitTime.HasValue
-                    && (attractionWaitTime.Status == AttractionStatus.Operating
-                        || attractionWaitTime.Status == AttractionStatus.Down)
-                    && attractionWaitTime.Status.HasValue)
+                if (attractionWaitTime.Meta.Type == AttractionType.Attraction
+                    && attractionWaitTime.WaitTime.HasValue
+                    && attractionWaitTime.Status.HasValue
+                    && (attractionWaitTime.Status == AttractionStatus.Operating || attractionWaitTime.Status == AttractionStatus.Down))
                 {
-                    var waitTime = new WaitTime
-                    {
-                        PartitionKey = attractionWaitTime.Id,
-                        RowKey = Guid.NewGuid().ToString(),
-                        Name = attractionWaitTime.Name,
-                        Status = attractionWaitTime.Status.Value,
-                        LastUpdate = attractionWaitTime.LastUpdate.Value,
-                        WaitTimeMinutes = attractionWaitTime.WaitTime.Value
-                    };
-
-                    await cloudTable.ExecuteAsync(TableOperation.Insert(waitTime));
+                    await _attractionInfoStorage.StoreAttractionInfo(park, attractionWaitTime);
                 }
             }
         }
-    }
-
-    public class WaitTime : TableEntity
-    {
-        public string Name { get; set; }
-        public int WaitTimeMinutes { get; set; }
-        public AttractionStatus Status { get; set; }
-        public DateTimeOffset LastUpdate { get; set; }
     }
 }
