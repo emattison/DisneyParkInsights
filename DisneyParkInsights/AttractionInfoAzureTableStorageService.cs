@@ -29,6 +29,8 @@ namespace DisneyParkInsights
         {
             CloudTable attractionCloudTable = await GetCloudTable($"{park}Attractions");
 
+            _logger.LogInformation($"Storing attraction info for [{attractionInfo.Name}] at [{park}]");
+
             var attractionInfoEntity = new AttractionInfoEntity
             {
                 PartitionKey = attractionInfo.Id,
@@ -47,7 +49,7 @@ namespace DisneyParkInsights
 
             CloudTable waitTimeCloudTable = await GetCloudTable($"{park}WaitTimes");
 
-            _logger.LogInformation(attractionInfoEntity.ToString());
+            _logger.LogInformation($"Storing wait time for [{attractionInfo.Name}] at [{park}]");
 
             var waitTimeEntity = new AttractionWaitTimeEntity
             {

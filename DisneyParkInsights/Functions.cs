@@ -14,10 +14,6 @@ namespace DisneyWorldWaitTracker
     {
         private readonly IThemeParksWiki _themeParksWiki;
         private readonly IAttractionInfoStorageService _attractionInfoStorage;
-        private const string MagicKingdomRunFrequency = "0 */15 13-22 * * *";
-        private const string HollywoodStudiosRunFrequency = "0 */15 14-23 * * *";
-        private const string EpcotRunFrequency = "0 */15 15-23 * * *";
-        private const string AnimalKingdomRunFrequency = "0 */15 13-21 * * *";
 
         private string[] Parks = new string[]
         {
@@ -36,74 +32,39 @@ namespace DisneyWorldWaitTracker
         }
 
         [FunctionName("TriggerAttractionDataRetrieval")]
-        public async Task TriggerAttractionDataRetrieval([TimerTrigger("%AttractionRetrievalInterval%")]TimerInfo myTimer, ILogger log)
+        public async Task TriggerAttractionDataRetrieval([TimerTrigger("%AttractionRetrievalInterval%")] TimerInfo myTimer, ILogger log)
         {
             //Get park data
             foreach (string park in Parks)
             {
+                log.LogInformation($"Getting calendar for [{park}]");
                 IEnumerable<ParkCalendarEntryData> parkCalendarEntries = await _themeParksWiki.GetParkCalendar(park);
 
                 var parkCalendar = parkCalendarEntries.FirstOrDefault(x => x.Date.Date == DateTime.Today);
 
-                if (parkCalendar.OpeningTime.UtcDateTime <= DateTime.UtcNow && parkCalendar.ClosingTime.UtcDateTime >= DateTime.UtcNow)
+#if DEBUG
+                if (parkCalendar == null)
                 {
+                    parkCalendar = new ParkCalendarEntryData
+                    {
+                        Date = DateTime.Now,
+                        OpeningTime = DateTime.UtcNow.AddHours(-1),
+                        ClosingTime = DateTime.UtcNow.AddHours(1),
+                        Status = ParkStatus.Operating
+                    };
+                }
+#endif
+
+                if (parkCalendar != null
+                    && parkCalendar.OpeningTime.UtcDateTime <= DateTime.UtcNow && parkCalendar.ClosingTime.UtcDateTime >= DateTime.UtcNow)
+                {
+                    log.LogInformation($"Getting wait times for [{park}]");
                     IEnumerable<AttractionData> attractionInfos = await _themeParksWiki.GetParkWaitTimes(park);
 
                     await AddWaitTimesToStorage(park, attractionInfos);
                 }
             }
         }
-
-
-        /* Old Functions
-        [FunctionName("MagicKingdomWaitTimes")]
-        public async Task GetMagicKingdomWaitTimes([TimerTrigger(MagicKingdomRunFrequency)]TimerInfo myTimer, [Table("MagicKingdomWaitTimes")]CloudTable cloudTable, ILogger log)
-        {
-            log.LogInformation($"Magic Kingdom wait times pulled at: {DateTime.Now}");
-
-            var attractionWaitTimes = await _themeParksWiki.GetWaltDisneyWorldMagicKingdomWaitTimes();
-
-            await AddWaitTimesToTable(cloudTable, attractionWaitTimes);
-
-            log.LogInformation($"Magic Kingdom wait times finished at: {DateTime.Now}");
-        }
-
-        [FunctionName("HollywoodStudiosWaitTimes")]
-        public async Task GetHollywoodStudiosWaitTimes([TimerTrigger(HollywoodStudiosRunFrequency)]TimerInfo myTimer, [Table("HollywoodStudiosWaitTimes")]CloudTable cloudTable, ILogger log)
-        {
-            log.LogInformation($"Hollywood Studios wait times pulled at: {DateTime.Now}");
-
-            var attractionWaitTimes = await _themeParksWiki.GetWaltDisneyWorldHollywoodStudiosWaitTimes();
-
-            await AddWaitTimesToTable(cloudTable, attractionWaitTimes);
-
-            log.LogInformation($"Hollywood Studios wait times finished at: {DateTime.Now}");
-        }
-
-        [FunctionName("EpcotWaitTimes")]
-        public async Task GetEpcotWaitTimes([TimerTrigger(EpcotRunFrequency)]TimerInfo myTimer, [Table("EpcotWaitTimes")]CloudTable cloudTable, ILogger log)
-        {
-            log.LogInformation($"Epcot wait times pulled at: {DateTime.Now}");
-
-            var attractionWaitTimes = await _themeParksWiki.GetWaltDisneyWorldEpcotWaitTimes();
-
-            await AddWaitTimesToTable(cloudTable, attractionWaitTimes);
-
-            log.LogInformation($"Epcot wait times finished at: {DateTime.Now}");
-        }
-
-        [FunctionName("AnimalKingdomWaitTimes")]
-        public async Task GetAnimalKingdomWaitTimes([TimerTrigger(AnimalKingdomRunFrequency)]TimerInfo myTimer, [Table("AnimalKingdomWaitTimes")]CloudTable cloudTable, ILogger log)
-        {
-            log.LogInformation($"AnimalKingdom wait times pulled at: {DateTime.Now}");
-
-            var attractionWaitTimes = await _themeParksWiki.GetWaltDisneyWorldAnimalKingdomWaitTimes();
-
-            await AddWaitTimesToTable(cloudTable, attractionWaitTimes);
-
-            log.LogInformation($"Animal Kingdom wait times finished at: {DateTime.Now}");
-        }
-        */
 
         private async Task AddWaitTimesToStorage(string park, IEnumerable<AttractionData> attractionWaitTimes)
         {
