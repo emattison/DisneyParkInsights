@@ -15,14 +15,14 @@ namespace DisneyWorldWaitTracker
         private readonly IThemeParksWiki _themeParksWiki;
         private readonly IAttractionInfoStorageService _attractionInfoStorage;
 
-        private string[] Parks = new string[]
+        private ParkConfig[] Parks = new ParkConfig[]
         {
-            "WaltDisneyWorldMagicKingdom",
-            "WaltDisneyWorldHollywoodStudios",
-            "WaltDisneyWorldAnimalKingdom",
-            "WaltDisneyWorldEpcot",
-            "DisneylandResortMagicKingdom",
-            "DisneylandResortCaliforniaAdventure"
+            new ParkConfig("WaltDisneyWorldMagicKingdom", TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time")),
+            new ParkConfig("WaltDisneyWorldHollywoodStudios", TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time")),
+            new ParkConfig("WaltDisneyWorldAnimalKingdom", TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time")),
+            new ParkConfig("WaltDisneyWorldEpcot", TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time")),
+            new ParkConfig("DisneylandResortMagicKingdom", TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time")),
+            new ParkConfig("DisneylandResortCaliforniaAdventure", TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time"))
         };
 
         public Functions(IThemeParksWiki themeParksWiki, IAttractionInfoStorageService attractionInfoStorage)
@@ -35,12 +35,13 @@ namespace DisneyWorldWaitTracker
         public async Task TriggerAttractionDataRetrieval([TimerTrigger("%AttractionRetrievalInterval%")] TimerInfo myTimer, ILogger log)
         {
             //Get park data
-            foreach (string park in Parks)
+            foreach (ParkConfig park in Parks)
             {
-                log.LogInformation($"Getting calendar for [{park}]");
-                IEnumerable<ParkCalendarEntryData> parkCalendarEntries = await _themeParksWiki.GetParkCalendar(park);
+                log.LogInformation($"Getting calendar for [{park.ParkName}]");
+                IEnumerable<ParkCalendarEntryData> parkCalendarEntries = await _themeParksWiki.GetParkCalendar(park.ParkName);
 
-                var parkCalendar = parkCalendarEntries.FirstOrDefault(x => x.Date.Date == DateTime.Today);
+                var currentTimeAtPark = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, park.TimeZone);
+                var parkCalendar = parkCalendarEntries.FirstOrDefault(x => x.Date.Date == currentTimeAtPark.Date);
 
 #if DEBUG
                 if (parkCalendar == null)
@@ -54,14 +55,22 @@ namespace DisneyWorldWaitTracker
                     };
                 }
 #endif
-
-                if (parkCalendar != null
-                    && parkCalendar.OpeningTime.UtcDateTime <= DateTime.UtcNow && parkCalendar.ClosingTime.UtcDateTime >= DateTime.UtcNow)
+                if (parkCalendar == null)
                 {
-                    log.LogInformation($"Getting wait times for [{park}]");
-                    IEnumerable<AttractionData> attractionInfos = await _themeParksWiki.GetParkWaitTimes(park);
+                    log.LogWarning($"[{park.ParkName}] missing calendar for {currentTimeAtPark.Date}");
+                    return;
+                }
 
-                    await AddWaitTimesToStorage(park, attractionInfos);
+                if (parkCalendar.OpeningTime <= currentTimeAtPark && parkCalendar.ClosingTime >= currentTimeAtPark)
+                {
+                    log.LogInformation($"Getting wait times for [{park.ParkName}]");
+                    IEnumerable<AttractionData> attractionInfos = await _themeParksWiki.GetParkWaitTimes(park.ParkName);
+
+                    await AddWaitTimesToStorage(park.ParkName, attractionInfos);
+                }
+                else
+                {
+                    log.LogInformation($"Now: {currentTimeAtPark} [{park.ParkName}] closed. Hours: {parkCalendar.OpeningTime} - {parkCalendar.ClosingTime}");
                 }
             }
         }
