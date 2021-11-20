@@ -2,6 +2,7 @@
 using DisneyWorldWaitTracker.Data;
 using DisneyWorldWaitTracker.TableEntities;
 using Microsoft.Azure.Cosmos.Table;
+using Microsoft.Azure.Documents.SystemFunctions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -25,11 +26,11 @@ namespace DisneyParkInsights
             _logger = logger;
         }
 
-        public async Task StoreAttractionInfo(string park, AttractionData attractionInfo)
+        public async Task StoreAttractionInfo(ParkConfig park, AttractionData attractionInfo)
         {
-            CloudTable attractionCloudTable = await GetCloudTable($"{park}Attractions");
+            CloudTable attractionCloudTable = await GetCloudTable($"{park.ParkName}Attractions");
 
-            _logger.LogInformation($"Storing attraction info for [{attractionInfo.Name}] at [{park}]");
+            _logger.LogInformation($"Storing attraction info for [{attractionInfo.Name}] at [{park.ParkName}]");
 
             var attractionInfoEntity = new AttractionInfoEntity
             {
@@ -38,26 +39,27 @@ namespace DisneyParkInsights
                 Name = attractionInfo.Name,
                 Latitude = attractionInfo.Meta.Latitude,
                 Longitude = attractionInfo.Meta.Longitude,
-                ChildSwap = attractionInfo.Meta.ChildSwap,
-                PregnantFriendly = !attractionInfo.Meta.UnsuitableForPregnantPeople,
-                RidePhoto = attractionInfo.Meta.OnRidePhoto,
-                SingleRider = attractionInfo.Meta.SingleRider,
-                WetRide = attractionInfo.Meta.MayGetWet
+                ChildSwap = attractionInfo.Meta.ChildSwap ?? false,
+                PregnantFriendly = !attractionInfo.Meta.UnsuitableForPregnantPeople ?? false,
+                RidePhoto = attractionInfo.Meta.OnRidePhoto ?? false,
+                SingleRider = attractionInfo.Meta.SingleRider ?? false,
+                WetRide = attractionInfo.Meta.MayGetWet ?? false
             };
 
             await attractionCloudTable.ExecuteAsync(TableOperation.InsertOrReplace(attractionInfoEntity));
 
-            CloudTable waitTimeCloudTable = await GetCloudTable($"{park}WaitTimes");
+            CloudTable waitTimeCloudTable = await GetCloudTable($"{park.ParkName}WaitTimes");
 
-            _logger.LogInformation($"Storing wait time for [{attractionInfo.Name}] at [{park}]");
+            _logger.LogInformation($"Storing wait time for [{attractionInfo.Name}] at [{park.ParkName}]");
 
             var waitTimeEntity = new AttractionWaitTimeEntity
             {
                 PartitionKey = attractionInfo.Id,
                 RowKey = Guid.NewGuid().ToString(),
                 Name = attractionInfo.Name,
-                Status = attractionInfo.Status.Value,
+                Status = (int)attractionInfo.Status.Value,
                 LastUpdate = attractionInfo.LastUpdate.Value,
+                TimeZoneOffset = park.TimeZone.GetUtcOffset(DateTime.UtcNow).TotalHours,
                 WaitTimeMinutes = attractionInfo.WaitTime.Value
             };
 

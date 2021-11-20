@@ -7,6 +7,6 @@ namespace DisneyParkInsights
 {
     public interface IAttractionInfoStorageService
     {
-        Task StoreAttractionInfo(string park, AttractionData attractionInfo);
+        Task StoreAttractionInfo(ParkConfig park, AttractionData attractionInfo);
     }
 }

@@ -2,9 +2,9 @@
 {
     public enum AttractionStatus
     {
-        Operating,
-        Closed,
-        Refurbishment,
-        Down
+        Closed = 0,
+        Operating = 1,
+        Down = 2,
+        Refurbishment = 3,
     }
 }

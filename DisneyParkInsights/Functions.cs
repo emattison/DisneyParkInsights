@@ -42,7 +42,6 @@ namespace DisneyWorldWaitTracker
 
                 var currentTimeAtPark = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, park.TimeZone);
                 var parkCalendar = parkCalendarEntries.FirstOrDefault(x => x.Date.Date == currentTimeAtPark.Date);
-
 #if DEBUG
                 if (parkCalendar == null)
                 {
@@ -66,7 +65,7 @@ namespace DisneyWorldWaitTracker
                     log.LogInformation($"Getting wait times for [{park.ParkName}]");
                     IEnumerable<AttractionData> attractionInfos = await _themeParksWiki.GetParkWaitTimes(park.ParkName);
 
-                    await AddWaitTimesToStorage(park.ParkName, attractionInfos);
+                    await AddWaitTimesToStorage(park, attractionInfos);
                 }
                 else
                 {
@@ -75,7 +74,7 @@ namespace DisneyWorldWaitTracker
             }
         }
 
-        private async Task AddWaitTimesToStorage(string park, IEnumerable<AttractionData> attractionWaitTimes)
+        private async Task AddWaitTimesToStorage(ParkConfig park, IEnumerable<AttractionData> attractionWaitTimes)
         {
             foreach (AttractionData attractionWaitTime in attractionWaitTimes)
             {

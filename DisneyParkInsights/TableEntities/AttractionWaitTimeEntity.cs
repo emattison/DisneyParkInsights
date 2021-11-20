@@ -10,8 +10,9 @@ namespace DisneyWorldWaitTracker.TableEntities
     {
         public string Name { get; set; }
         public int WaitTimeMinutes { get; set; }
-        public AttractionStatus Status { get; set; }
+        public int Status { get; set; }
         public DateTimeOffset LastUpdate { get; set; }
+        public double TimeZoneOffset { get; set; }
 
         public override string ToString()
         {

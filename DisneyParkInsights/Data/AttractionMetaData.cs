@@ -5,7 +5,7 @@ namespace DisneyWorldWaitTracker.Data
     public class AttractionMetaData
     {
         [JsonProperty("singleRider")]
-        public bool SingleRider { get; set; }
+        public bool? SingleRider { get; set; }
 
         [JsonProperty("latitude")]
         public double Latitude { get; set; }
@@ -17,15 +17,15 @@ namespace DisneyWorldWaitTracker.Data
         public AttractionType Type { get; set; }
 
         [JsonProperty("unsuitableForPregnantPeople")]
-        public bool UnsuitableForPregnantPeople { get; set; }
+        public bool? UnsuitableForPregnantPeople { get; set; }
 
         [JsonProperty("childSwap")]
-        public bool ChildSwap { get; set; }
+        public bool? ChildSwap { get; set; }
 
         [JsonProperty("mayGetWet")]
-        public bool MayGetWet { get; set; }
+        public bool? MayGetWet { get; set; }
 
         [JsonProperty("onRidePhoto")]
-        public bool OnRidePhoto { get; set; }
+        public bool? OnRidePhoto { get; set; }
     }
 }
