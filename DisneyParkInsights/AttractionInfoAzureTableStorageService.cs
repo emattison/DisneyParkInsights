@@ -48,24 +48,32 @@ namespace DisneyParkInsights
 
             await attractionCloudTable.ExecuteAsync(TableOperation.InsertOrReplace(attractionInfoEntity));
 
-            CloudTable waitTimeCloudTable = await GetCloudTable($"{park.ParkName}WaitTimes");
-
-            _logger.LogInformation($"Storing wait time for [{attractionInfo.Name}] at [{park.ParkName}]");
-
-            var waitTimeEntity = new AttractionWaitTimeEntity
+            if (attractionInfo.Status.HasValue && attractionInfo.LastUpdate.HasValue && attractionInfo.WaitTime.HasValue)
             {
-                PartitionKey = attractionInfo.Id,
-                RowKey = Guid.NewGuid().ToString(),
-                Name = attractionInfo.Name,
-                Status = (int)attractionInfo.Status.Value,
-                LastUpdate = attractionInfo.LastUpdate.Value,
-                TimeZoneOffset = park.TimeZone.GetUtcOffset(DateTime.UtcNow).TotalHours,
-                WaitTimeMinutes = attractionInfo.WaitTime.Value
-            };
+                CloudTable waitTimeCloudTable = await GetCloudTable($"{park.ParkName}WaitTimes");
 
-            await waitTimeCloudTable.ExecuteAsync(TableOperation.Insert(waitTimeEntity));
+                _logger.LogInformation($"Storing wait time for [{attractionInfo.Name}] at [{park.ParkName}]");
 
-            _logger.LogInformation(waitTimeEntity.ToString());
+                var waitTimeEntity = new AttractionWaitTimeEntity
+                {
+                    PartitionKey = attractionInfo.Id,
+                    RowKey = Guid.NewGuid().ToString(),
+                    Name = attractionInfo.Name,
+                    Status = (int)attractionInfo.Status.Value,
+                    LastUpdate = attractionInfo.LastUpdate.Value,
+                    TimeZoneOffset = park.TimeZone.GetUtcOffset(DateTime.UtcNow).TotalHours,
+                    WaitTimeMinutes = attractionInfo.WaitTime.Value,
+                    RetrievalTime = DateTimeOffset.UtcNow
+                };
+
+                await waitTimeCloudTable.ExecuteAsync(TableOperation.Insert(waitTimeEntity));
+
+                _logger.LogInformation(waitTimeEntity.ToString());
+            }
+            else
+            {
+                _logger.LogInformation($"Skipped entry for {attractionInfo.Name} due to missing values.");
+            }
         }
 
         private async Task<CloudTable> GetCloudTable(string park)

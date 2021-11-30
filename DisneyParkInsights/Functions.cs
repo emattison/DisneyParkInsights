@@ -40,7 +40,7 @@ namespace DisneyWorldWaitTracker
                 log.LogInformation($"Getting calendar for [{park.ParkName}]");
                 IEnumerable<ParkCalendarEntryData> parkCalendarEntries = await _themeParksWiki.GetParkCalendar(park.ParkName);
 
-                var currentTimeAtPark = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, park.TimeZone);
+                var currentTimeAtPark = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, park.TimeZone);
                 var parkCalendar = parkCalendarEntries.FirstOrDefault(x => x.Date.Date == currentTimeAtPark.Date);
 #if DEBUG
                 if (parkCalendar == null)

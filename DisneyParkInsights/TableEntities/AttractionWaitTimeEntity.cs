@@ -13,6 +13,7 @@ namespace DisneyWorldWaitTracker.TableEntities
         public int Status { get; set; }
         public DateTimeOffset LastUpdate { get; set; }
         public double TimeZoneOffset { get; set; }
+        public DateTimeOffset RetrievalTime { get; set; }
 
         public override string ToString()
         {
