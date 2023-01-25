@@ -29,24 +29,33 @@ namespace DisneyParkInsights
         public async Task StoreAttractionInfo(ParkConfig park, AttractionData attractionInfo)
         {
             CloudTable attractionCloudTable = await GetCloudTable($"{park.ParkName}Attractions");
+            
+            var retrieveOperation = await attractionCloudTable.ExecuteAsync(TableOperation.Retrieve<AttractionInfoEntity>(attractionInfo.Id, attractionInfo.Id));
+            
+            if (retrieveOperation.Entity is null || DateTime.UtcNow - retrieveOperation.Entity.Timestamp.UtcDateTime > TimeSpan.FromHours(24))
+            {            
+                _logger.LogInformation($"Storing attraction info for [{attractionInfo.Name}] at [{park.ParkName}]");
 
-            _logger.LogInformation($"Storing attraction info for [{attractionInfo.Name}] at [{park.ParkName}]");
+                var attractionInfoEntity = new AttractionInfoEntity
+                {
+                    PartitionKey = attractionInfo.Id,
+                    RowKey = attractionInfo.Id,
+                    Name = attractionInfo.Name,
+                    Latitude = attractionInfo.Meta.Latitude,
+                    Longitude = attractionInfo.Meta.Longitude,
+                    ChildSwap = attractionInfo.Meta.ChildSwap ?? false,
+                    PregnantFriendly = !attractionInfo.Meta.UnsuitableForPregnantPeople ?? false,
+                    RidePhoto = attractionInfo.Meta.OnRidePhoto ?? false,
+                    SingleRider = attractionInfo.Meta.SingleRider ?? false,
+                    WetRide = attractionInfo.Meta.MayGetWet ?? false
+                };
 
-            var attractionInfoEntity = new AttractionInfoEntity
+                await attractionCloudTable.ExecuteAsync(TableOperation.InsertOrReplace(attractionInfoEntity));
+            }
+            else
             {
-                PartitionKey = attractionInfo.Id,
-                RowKey = attractionInfo.Id,
-                Name = attractionInfo.Name,
-                Latitude = attractionInfo.Meta.Latitude,
-                Longitude = attractionInfo.Meta.Longitude,
-                ChildSwap = attractionInfo.Meta.ChildSwap ?? false,
-                PregnantFriendly = !attractionInfo.Meta.UnsuitableForPregnantPeople ?? false,
-                RidePhoto = attractionInfo.Meta.OnRidePhoto ?? false,
-                SingleRider = attractionInfo.Meta.SingleRider ?? false,
-                WetRide = attractionInfo.Meta.MayGetWet ?? false
-            };
-
-            await attractionCloudTable.ExecuteAsync(TableOperation.InsertOrReplace(attractionInfoEntity));
+                _logger.LogInformation($"Skipped attraction info update for {attractionInfo.Name} due to it being less than 24 hours.");
+            }
 
             if (attractionInfo.Status.HasValue && attractionInfo.LastUpdate.HasValue && attractionInfo.WaitTime.HasValue)
             {
