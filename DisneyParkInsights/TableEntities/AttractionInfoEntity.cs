@@ -1,11 +1,10 @@
-﻿using Microsoft.Azure.Cosmos.Table;
+﻿using Azure;
+using Azure.Data.Tables;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace DisneyParkInsights.TableEntities
 {
-    public class AttractionInfoEntity : TableEntity
+    public class AttractionInfoEntity : ITableEntity
     {
         public string Name { get; set; }
 
@@ -22,6 +21,10 @@ namespace DisneyParkInsights.TableEntities
         public bool WetRide { get; set; }
 
         public bool RidePhoto { get; set; }
+        public string PartitionKey { get; set; }
+        public string RowKey { get; set; }
+        public DateTimeOffset? Timestamp { get; set; }
+        public ETag ETag { get; set; }
 
         public override string ToString()
         {

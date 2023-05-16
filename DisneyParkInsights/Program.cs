@@ -6,6 +6,7 @@ using Refit;
 using DisneyWorldWaitTracker;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using DisneyParkInsights.DebugHelper;
 
 var host = new HostBuilder()
     .ConfigureFunctionsWorkerDefaults()
@@ -18,8 +19,12 @@ var host = new HostBuilder()
     {
         serviceCollection.AddLogging();
 
+#if DEBUG
+        serviceCollection.AddSingleton<IThemeParksWiki, DebugThemeParksWiki>();
+#else
         serviceCollection.AddRefitClient<IThemeParksWiki>()
                             .ConfigureHttpClient(client => client.BaseAddress = new Uri("https://api.themeparks.wiki"));
+#endif
 
         serviceCollection.AddOptions<AttractionInfoAzureTableStorageConfig>()
             .Configure<IConfiguration>((settings, configuration) =>

@@ -1,38 +1,35 @@
 ﻿using DisneyParkInsights.TableEntities;
 using DisneyWorldWaitTracker.Data;
 using DisneyWorldWaitTracker.TableEntities;
-using Microsoft.Azure.Cosmos.Table;
-using Microsoft.Azure.Documents.SystemFunctions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Azure.Data.Tables;
 
 namespace DisneyParkInsights
 {
     public class AttractionInfoAzureTableStorageService : IAttractionInfoStorageService
     {
-        private readonly Dictionary<string, CloudTable> _azureCloudTableReferences;
+        private readonly Dictionary<string, TableClient> _azureCloudTableReferences;
+        private readonly AttractionInfoAzureTableStorageConfig _config;
         private readonly ILogger<AttractionInfoAzureTableStorageService> _logger;
-        private CloudTableClient _cloudTableClient;
 
         public AttractionInfoAzureTableStorageService(IOptions<AttractionInfoAzureTableStorageConfig> config, ILogger<AttractionInfoAzureTableStorageService> logger)
         {
-            _azureCloudTableReferences = new Dictionary<string, CloudTable>();
-
-            var cloudStorageAccount = CloudStorageAccount.Parse(config.Value.ConnectionString);
-            _cloudTableClient = cloudStorageAccount.CreateCloudTableClient();
+            _azureCloudTableReferences = new Dictionary<string, TableClient>();
+            _config = config.Value;
             _logger = logger;
         }
 
         public async Task StoreAttractionInfo(ParkConfig park, AttractionData attractionInfo)
         {
-            CloudTable attractionCloudTable = await GetCloudTable($"{park.ParkName}Attractions");
+            var attractionTableClient = await GetCloudTable($"{park.ParkName}Attractions");
+            var response = await attractionTableClient.GetEntityIfExistsAsync<AttractionInfoEntity>(attractionInfo.Id, attractionInfo.Id);
+            var attractionEntity = response.HasValue ? response.Value : null;
             
-            var retrieveOperation = await attractionCloudTable.ExecuteAsync(TableOperation.Retrieve<AttractionInfoEntity>(attractionInfo.Id, attractionInfo.Id));
-            
-            if (retrieveOperation.Entity is null || DateTime.UtcNow - retrieveOperation.Entity.Timestamp.UtcDateTime > TimeSpan.FromHours(24))
+            if (attractionEntity is null || DateTime.UtcNow - attractionEntity.Timestamp > TimeSpan.FromHours(24))
             {            
                 _logger.LogInformation($"Storing attraction info for [{attractionInfo.Name}] at [{park.ParkName}]");
 
@@ -50,7 +47,7 @@ namespace DisneyParkInsights
                     WetRide = attractionInfo.Meta.MayGetWet ?? false
                 };
 
-                await attractionCloudTable.ExecuteAsync(TableOperation.InsertOrReplace(attractionInfoEntity));
+                var upsertResponse = await attractionTableClient.UpsertEntityAsync(attractionInfoEntity);
             }
             else
             {
@@ -59,7 +56,7 @@ namespace DisneyParkInsights
 
             if (attractionInfo.Status.HasValue && attractionInfo.LastUpdate.HasValue && attractionInfo.WaitTime.HasValue)
             {
-                CloudTable waitTimeCloudTable = await GetCloudTable($"{park.ParkName}WaitTimes");
+                var waitTimeTableClient = await GetCloudTable($"{park.ParkName}WaitTimes");
 
                 _logger.LogInformation($"Storing wait time for [{attractionInfo.Name}] at [{park.ParkName}]");
 
@@ -75,7 +72,7 @@ namespace DisneyParkInsights
                     RetrievalTime = DateTimeOffset.UtcNow
                 };
 
-                await waitTimeCloudTable.ExecuteAsync(TableOperation.Insert(waitTimeEntity));
+                await waitTimeTableClient.UpsertEntityAsync(waitTimeEntity);
 
                 _logger.LogInformation(waitTimeEntity.ToString());
             }
@@ -85,17 +82,17 @@ namespace DisneyParkInsights
             }
         }
 
-        private async Task<CloudTable> GetCloudTable(string park)
+        private async Task<TableClient> GetCloudTable(string park)
         {
-            CloudTable cloudTable;
+            TableClient tableClient;
 
-            if (_azureCloudTableReferences.TryGetValue(park, out cloudTable) == false)
+            if (_azureCloudTableReferences.TryGetValue(park, out tableClient) == false)
             {
                 try
                 {
-                    cloudTable = _cloudTableClient.GetTableReference(park);
-                    await cloudTable.CreateIfNotExistsAsync();
-                    _azureCloudTableReferences.Add(park, cloudTable);
+                    tableClient = new TableClient(_config.ConnectionString, park);
+                    await tableClient.CreateIfNotExistsAsync();
+                    _azureCloudTableReferences.Add(park, tableClient);
 
                     _logger.LogInformation($"Created azure storage table for {park}");
                 }
@@ -105,7 +102,7 @@ namespace DisneyParkInsights
                 }
             }
 
-            return cloudTable;
+            return tableClient;
         }
     }
 }
