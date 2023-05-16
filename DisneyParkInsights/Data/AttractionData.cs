@@ -1,32 +1,32 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
+using System.Text.Json.Serialization;
 
 namespace DisneyWorldWaitTracker.Data
 {
     public class AttractionData
     {
-        [JsonProperty("id")]
+        [JsonPropertyName("id")]
         public string Id { get; set; }
 
-        [JsonProperty("waitTime")]
+        [JsonPropertyName("waitTime")]
         public int? WaitTime { get; set; }
 
-        [JsonProperty("status")]
+        [JsonPropertyName("status")]
         public AttractionStatus? Status { get; set; }
 
-        [JsonProperty("active")]
+        [JsonPropertyName("active")]
         public bool Active { get; set; }
 
-        [JsonProperty("lastUpdate")]
+        [JsonPropertyName("lastUpdate")]
         public DateTimeOffset? LastUpdate { get; set; }
 
-        [JsonProperty("meta")]
+        [JsonPropertyName("meta")]
         public AttractionMetaData Meta { get; set; }
 
-        [JsonProperty("name")]
+        [JsonPropertyName("name")]
         public string Name { get; set; }
 
-        [JsonProperty("fastPass")]
+        [JsonPropertyName("fastPass")]
         public bool FastPass { get; set; }
     }
 }

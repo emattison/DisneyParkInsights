@@ -1,12 +1,10 @@
-﻿using DisneyWorldWaitTracker.Data;
-using Microsoft.Azure.Cosmos.Table;
+﻿using Azure;
+using Azure.Data.Tables;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace DisneyWorldWaitTracker.TableEntities
 {
-    public class AttractionWaitTimeEntity : TableEntity
+    public class AttractionWaitTimeEntity : ITableEntity
     {
         public string Name { get; set; }
         public int WaitTimeMinutes { get; set; }
@@ -14,6 +12,10 @@ namespace DisneyWorldWaitTracker.TableEntities
         public DateTimeOffset LastUpdate { get; set; }
         public double TimeZoneOffset { get; set; }
         public DateTimeOffset RetrievalTime { get; set; }
+        public string PartitionKey { get; set; }
+        public string RowKey { get; set; }
+        public DateTimeOffset? Timestamp { get; set; }
+        public ETag ETag { get; set; }
 
         public override string ToString()
         {

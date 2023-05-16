@@ -1,31 +1,31 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace DisneyWorldWaitTracker.Data
 {
     public class AttractionMetaData
     {
-        [JsonProperty("singleRider")]
+        [JsonPropertyName("singleRider")]
         public bool? SingleRider { get; set; }
 
-        [JsonProperty("latitude")]
+        [JsonPropertyName("latitude")]
         public double Latitude { get; set; }
 
-        [JsonProperty("longitude")]
+        [JsonPropertyName("longitude")]
         public double Longitude { get; set; }
 
-        [JsonProperty("type")]
+        [JsonPropertyName("type")]
         public AttractionType Type { get; set; }
 
-        [JsonProperty("unsuitableForPregnantPeople")]
+        [JsonPropertyName("unsuitableForPregnantPeople")]
         public bool? UnsuitableForPregnantPeople { get; set; }
 
-        [JsonProperty("childSwap")]
+        [JsonPropertyName("childSwap")]
         public bool? ChildSwap { get; set; }
 
-        [JsonProperty("mayGetWet")]
+        [JsonPropertyName("mayGetWet")]
         public bool? MayGetWet { get; set; }
 
-        [JsonProperty("onRidePhoto")]
+        [JsonPropertyName("onRidePhoto")]
         public bool? OnRidePhoto { get; set; }
     }
 }

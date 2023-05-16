@@ -1,20 +1,20 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
+using System.Text.Json.Serialization;
 
 namespace DisneyWorldWaitTracker.Data
 {
     public class ParkCalendarEntryData
     {
-        [JsonProperty("date")]
+        [JsonPropertyName("date")]
         public DateTimeOffset Date { get; set; }
 
-        [JsonProperty("type")]
+        [JsonPropertyName("type")]
         public ParkStatus Status { get; set; }
 
-        [JsonProperty("closingTime")]
+        [JsonPropertyName("closingTime")]
         public DateTimeOffset ClosingTime { get; set; }
 
-        [JsonProperty("openingTime")]
+        [JsonPropertyName("openingTime")]
         public DateTimeOffset OpeningTime { get; set; }
     }
 }
