@@ -40,6 +40,13 @@ namespace DisneyWorldWaitTracker
                 _logger.LogInformation($"Getting calendar for [{park.ParkName}]");
                 IEnumerable<ParkCalendarEntryData> parkCalendarEntries = await _themeParksWiki.GetParkCalendar(park.ParkName);
 
+
+                if (parkCalendarEntries == null)
+                {
+                    _logger.LogWarning($"[{park.ParkName}] missing calendar entries.");
+                    continue;
+                }
+
                 var currentTimeAtPark = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, park.TimeZone);
                 var parkCalendar = parkCalendarEntries.FirstOrDefault(x => x.Date.Date == currentTimeAtPark.Date);
 #if DEBUG
@@ -52,18 +59,24 @@ namespace DisneyWorldWaitTracker
                         ClosingTime = DateTime.UtcNow.AddHours(1),
                         Status = ParkStatus.Operating
                     };
-            }
+                }
 #endif
-            if (parkCalendar == null)
+                if (parkCalendar == null)
                 {
                     _logger.LogWarning($"[{park.ParkName}] missing calendar for {currentTimeAtPark.Date}");
-                    return;
+                    continue;
                 }
 
                 if (parkCalendar.OpeningTime <= currentTimeAtPark && parkCalendar.ClosingTime >= currentTimeAtPark)
                 {
                     _logger.LogInformation($"Getting wait times for [{park.ParkName}]");
                     IEnumerable<AttractionData> attractionInfos = await _themeParksWiki.GetParkWaitTimes(park.ParkName);
+
+                    if (attractionInfos == null)
+                    {
+                        _logger.LogWarning($"[{park.ParkName}] missing attraction data for {currentTimeAtPark.Date}");
+                        continue;
+                    }
 
                     await AddWaitTimesToStorage(park, attractionInfos);
                 }
