@@ -101,7 +101,55 @@ namespace DisneyParkInsights.DebugHelper
                                 Name = "Thunder Blunder Railroad",
                                 Active = false,
                                 FastPass = true,
-                                Status = AttractionStatus.Closed,
+                                Status = AttractionStatus.Operating,
+                                WaitTime = null,
+                                LastUpdate = DateTime.Now,
+                                Meta = new AttractionMetaData
+                                {
+                                    ChildSwap = true,
+                                    MayGetWet = false,
+                                    OnRidePhoto = true,
+                                    SingleRider = true,
+                                    Type = AttractionType.Attraction,
+                                    UnsuitableForPregnantPeople = true,
+                                    Latitude = 200,
+                                    Longitude = 200
+                                }
+                            }
+                        }
+                    }
+                },
+                { "DisneylandResortCaliforniaAdventure", new Dictionary<string, AttractionData>
+                    {
+                        { "DisneylandResortCaliforniaAdventure_1", new AttractionData
+                            {
+                                Id = "DisneylandResortCaliforniaAdventure_1",
+                                Name = "Guardians of the Hotel Tower",
+                                Active = true,
+                                FastPass = true,
+                                Status = AttractionStatus.Operating,
+                                WaitTime = 60,
+                                LastUpdate = DateTime.Now,
+                                Meta = new AttractionMetaData
+                                {
+                                    ChildSwap = true,
+                                    MayGetWet = true,
+                                    OnRidePhoto = true,
+                                    SingleRider = true,
+                                    Type = AttractionType.Attraction,
+                                    UnsuitableForPregnantPeople = true,
+                                    Latitude = 100,
+                                    Longitude = 100
+                                }
+                            }
+                        },
+                        { "DisneylandResortCaliforniaAdventure_2", new AttractionData
+                            {
+                                Id = "DisneylandResortCaliforniaAdventure_2",
+                                Name = "Cars Racing through a Canyon",
+                                Active = false,
+                                FastPass = true,
+                                Status = AttractionStatus.Operating,
                                 WaitTime = null,
                                 LastUpdate = DateTime.Now,
                                 Meta = new AttractionMetaData
