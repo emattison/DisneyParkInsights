@@ -14,5 +14,10 @@ namespace DisneyParkInsights
 
         public string ParkName { get; set; }
         public TimeZoneInfo TimeZone { get; set; }
+
+        public bool IsValid()
+        {
+            return !String.IsNullOrEmpty(ParkName) && TimeZone is not null;
+        }
     }
 }

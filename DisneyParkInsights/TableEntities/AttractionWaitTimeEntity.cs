@@ -2,7 +2,7 @@
 using Azure.Data.Tables;
 using System;
 
-namespace DisneyWorldWaitTracker.TableEntities
+namespace DisneyParkInsights.TableEntities
 {
     public class AttractionWaitTimeEntity : ITableEntity
     {
